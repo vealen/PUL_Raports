@@ -10,6 +10,7 @@ from styleframe import StyleFrame, Styler, utils
 from dictionaries import *
 
 
+
 ROOT = os.path.dirname(sys.executable)
 
 
@@ -51,24 +52,24 @@ def to_excel(data, excel, sheet):
         return result
 
 
-def set_style(wb, name_sh):
-    thin = Side(border_style="thin", color="000000")
-    workbook = openpyxl.load_workbook(wb)
-    for name in workbook.sheetnames:
-        sheet = workbook[name_sh]
-        for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row, max_col=sheet.max_column):
-            for cell in row:
-                alignment = copy.copy(cell.alignment)
-                alignment.wrapText = True
-                cell.alignment = alignment
-                cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
-    workbook.save(wb)
+# def set_style(wb, name_sh):
+#     thin = Side(border_style="thin", color="000000")
+#     workbook = openpyxl.load_workbook(wb)
+#     for name in workbook.sheetnames:
+#         sheet = workbook[name_sh]
+#         for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row, max_col=sheet.max_column):
+#             for cell in row:
+#                 alignment = copy.copy(cell.alignment)
+#                 alignment.wrapText = True
+#                 cell.alignment = alignment
+#                 cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+#     workbook.save(wb)
 
 
 def set_style(wb, name_sh):
     thin = Side(border_style="thin",
                 color="000000")
-    allign = Alignment(horizontal = 'left',
+    allign = Alignment(horizontal = 'center',
                        vertical='center',
                        wrap_text=True,
                        shrinkToFit=False)
@@ -86,39 +87,60 @@ def set_style(wb, name_sh):
 
     workbook.save(wb)
 
-# def set_format(wb, name_sh):
-#     workbook = openpyxl.load_workbook(wb)
-#     sheet = workbook[name_sh]
-#     headers = get_column_names(name_sh,workbook)
-#     print(headers)
-#     for row in sheet.iter_cols(min_row=4, max_row=sheet.max_row,max_col=sheet.max_column, min_col=2):
-#         if name_sh in ['L_ENERG_LS','ROZB']: #na sztywno - trzeba poprawic bo inaczje bedzie chujowo, przy ewentualnym recznym dodawaniu
-#             for cell in row:
-#                 cell.number_format ='0.0000'
-#         else:
-#             for cell in row:
-#                 cell.number_format ='0.00'
-#workbook.save(wb)
+
 
 def set_format(wb, name_sh, headers= None):
     workbook = openpyxl.load_workbook(wb)
     sheet = workbook[name_sh]
+    allign = Alignment(horizontal='right',
+                       vertical='center',
+                       wrap_text=True,
+                       shrinkToFit=False)
     if headers:
         for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row, max_col=sheet.max_column):
             if 'Jakość hodowlana' in headers:
                 row[headers['Jakość hodowlana']].number_format = '00'
             if 'Zadrzewienie' in headers:
                 row[headers['Zadrzewienie']].number_format = '0.00'
+            if 'Pow. [ha]' in headers:
+                row[headers['Pow. [ha]']].number_format = '0.00'
+                row[headers['Pow. [ha]']].alignment = allign
             if 'Pow.[ha]' in headers:
                 row[headers['Pow.[ha]']].number_format = '0.00'
+                row[headers['Pow.[ha]']].alignment = allign
+            if 'Pow. wskazania [ha]' in headers:
+                row[headers['Pow. wskazania [ha]']].number_format = '0.00'
+                row[headers['Pow. wskazania [ha]']].alignment = allign
             if 'Pow.[ha] ' in headers:
                 row[headers['Pow.[ha] ']].number_format = '0.0000'
+                row[headers['Pow.[ha] ']].alignment = allign
+            if 'Pow. PNSW [ha]' in headers:
+                row[headers['Pow. PNSW [ha]']].number_format = '0.00'
+                row[headers['Pow. PNSW [ha]']].alignment = allign
+            if 7 in headers:
+                row[headers[7]].number_format  = '0.0000'
+            if 9 in headers:
+                row[headers[9]].number_format  = '0.0000'
+
+
     else:
         for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row,max_col=sheet.max_column, min_col=2):
                 for cell in row:
                     cell.number_format = '0.00'
 
     workbook.save(wb)
+
+
+def set_row_height(excel):
+    wb = openpyxl.load_workbook(excel)
+    preserve = ['LANDING_PAGE']
+
+    for name in wb.sheetnames:
+        sheet = wb[name]
+        if name not in preserve:
+           for row in range(4,sheet.max_row):
+               sheet.row_dimensions[row].height = 10
+    wb.save(excel)
 
 def delete_empty_raports(excel, sheet_name_list):
     wb = openpyxl.load_workbook(excel)
@@ -136,9 +158,13 @@ def get_column_names(sheet_name,wb= None, excel = None): #zwraca nazwy kolumn (w
         wb = wb
     sheet = wb[sheet_name]
     headers = {}
-
-    for idx, col in enumerate(sheet.iter_cols(1,sheet.max_column, min_row=2),start=0):
-        headers[col[0].value] = idx
+    if sheet_name in ['Rozbieżności','ROZB']:
+        for idx, col in enumerate(sheet.iter_cols(1, sheet.max_column, min_row=3), start=0):
+            headers[col[0].value] = idx
+    else:
+        for idx, col in enumerate(sheet.iter_cols(1,sheet.max_column, min_row=2),start=0):
+            headers[col[0].value] = idx
+    print(headers)
     return headers
 
 
@@ -206,18 +232,19 @@ def replace_by_dict(dict, excel_path, sheet):  # zmieniacz do strony tytulowej
         for c in range(1, ws.max_column + 1):
             s = ws.cell(r, c).value
             for search_txt, replace_txt in dict.items():
-                if s != None and search_txt in s:
+                if s != None and search_txt in str(s):
                     ws.cell(r, c).value = s.replace(search_txt, replace_txt)
     wb.save(excel_path)
+
 
 
 def add_header_footer(excel_path, sheetname):
     wb = openpyxl.load_workbook(excel_path)
     ws = wb[sheetname]
-    ws.oddHeader.left.text = "Page &[Page] of &N"
-    ws.oddHeader.left.size = 8
-    ws.oddHeader.left.font = "Calibri"
-    ws.oddHeader.left.color = "CC3366"
+    ws.oddHeader.center.text = "Page &[Page] of &N"
+    ws.oddHeader.center.size = 8
+    ws.oddHeader.center.font = "Calibri"
+    ws.oddHeader.center.color = "CC3366"
     wb.save(excel_path)
 
 
