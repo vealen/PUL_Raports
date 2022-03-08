@@ -16,6 +16,9 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setEnabled(True)
         MainWindow.resize(482, 608)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/icon.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -172,7 +175,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "PURPUL"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "RAPORTY"))
         self.dbButton.setText(_translate("MainWindow", "Wskaż bazę danych"))
         self.label_9.setText(_translate("MainWindow", "-"))
         self.label_10.setText(_translate("MainWindow", "-"))
@@ -186,6 +189,7 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:10pt; vertical-align:sub;\">Autor: Piotr Fiodor TAXUSUL 2022    </span></p></body></html>"))
         self.menuPlik.setTitle(_translate("MainWindow", "Pomoc"))
         self.actionAbout.setText(_translate("MainWindow", "O programie"))
+import resources_rc
 
 
 if __name__ == "__main__":
