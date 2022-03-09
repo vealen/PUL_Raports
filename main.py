@@ -6,8 +6,8 @@ from mainWindow_ui import Ui_MainWindow
 from purpul_be import *
 from utils import *
 
-#ROOT = os.path.dirname(sys.executable)
-ROOT = os.path.dirname(__file__)
+ROOT = os.path.dirname(sys.executable)
+#ROOT = os.path.dirname(__file__)
 
 
 class mainWindow(QMainWindow, Ui_MainWindow):
