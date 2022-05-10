@@ -16,12 +16,12 @@ ROOT = os.path.dirname(sys.executable)
 
 def connect_db(db_path):
     odbc_drivers = [x for x in pyodbc.drivers() if x.startswith('Microsoft Access Driver')]
-    print(odbc_drivers)
+    #print(odbc_drivers)
     try:
         driver = u"{Microsoft Access Driver (*.mdb, *.accdb)}"
-        print('poszedł pierwszy')
+        #print('poszedł pierwszy')
     except:
-        print('dłuższy driver nie zadziałał, lecimy dalej')
+        #print('dłuższy driver nie zadziałał, lecimy dalej')
         driver = u"{Microsoft Access Driver (*.mdb)}"
 
     if os.path.exists(db_path):
@@ -51,19 +51,6 @@ def to_excel(data, excel, sheet):
             result = data.to_excel(writer, header=False, index=False, sheet_name=sheet, startrow=3)
         return result
 
-
-# def set_style(wb, name_sh):
-#     thin = Side(border_style="thin", color="000000")
-#     workbook = openpyxl.load_workbook(wb)
-#     for name in workbook.sheetnames:
-#         sheet = workbook[name_sh]
-#         for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row, max_col=sheet.max_column):
-#             for cell in row:
-#                 alignment = copy.copy(cell.alignment)
-#                 alignment.wrapText = True
-#                 cell.alignment = alignment
-#                 cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
-#     workbook.save(wb)
 
 
 def set_style(wb, name_sh):
@@ -117,10 +104,12 @@ def set_format(wb, name_sh, headers= None):
             if 'Pow. PNSW [ha]' in headers:
                 row[headers['Pow. PNSW [ha]']].number_format = '0.00'
                 row[headers['Pow. PNSW [ha]']].alignment = allign
-            if 7 in headers:
-                row[headers[7]].number_format  = '0.0000'
-            if 9 in headers:
-                row[headers[9]].number_format  = '0.0000'
+            if '7' in headers:
+                row[headers['7']].number_format  = '0.0000'
+                row[headers['7']].alignment = allign
+            if '9' in headers:
+                row[headers['9']].number_format  = '0.0000'
+                row[headers['9']].alignment = allign
 
 
     else:
@@ -160,11 +149,10 @@ def get_column_names(sheet_name,wb= None, excel = None): #zwraca nazwy kolumn (w
     headers = {}
     if sheet_name in ['Rozbieżności','ROZB']:
         for idx, col in enumerate(sheet.iter_cols(1, sheet.max_column, min_row=3), start=0):
-            headers[col[0].value] = idx
+            headers[str(col[0].value)] = idx
     else:
         for idx, col in enumerate(sheet.iter_cols(1,sheet.max_column, min_row=2),start=0):
-            headers[col[0].value] = idx
-    print(headers)
+            headers[str(col[0].value)] = idx
     return headers
 
 
@@ -182,11 +170,13 @@ def copy_blank_raport(root_dir, dst_dir, raport_name):  # tworzenie kopii "zapis
     raport_name = raport_name + '.xlsx'
     scheme = os.path.join(root_dir, 'misc', 'SCHEME_PUL.xlsx')
     new_name = os.path.join(dst_dir, raport_name)
-    blank_raport = shutil.copy2(scheme, dst_dir)
-    os.rename(blank_raport, new_name)
-    new_raport_dir = os.path.join(dst_dir, raport_name)
-    return new_raport_dir
-
+    if not os.path.exists(new_name):
+        blank_raport = shutil.copy2(scheme, dst_dir)
+        os.rename(blank_raport, new_name)
+        new_raport_dir = os.path.join(dst_dir, raport_name)
+        return new_raport_dir
+    else:
+        return False
 
 def delete_empty_raports(excel, sheet_name_list):
     wb = openpyxl.load_workbook(excel)

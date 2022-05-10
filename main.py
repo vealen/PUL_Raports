@@ -6,8 +6,8 @@ from mainWindow_ui import Ui_MainWindow
 from purpul_be import *
 from utils import *
 
-ROOT = os.path.dirname(sys.executable)
-#ROOT = os.path.dirname(__file__)
+#ROOT = os.path.dirname(sys.executable)
+ROOT = os.path.dirname(__file__)
 
 
 class mainWindow(QMainWindow, Ui_MainWindow):
@@ -158,75 +158,79 @@ class mainWindow(QMainWindow, Ui_MainWindow):
                     i = 0  # wartosc i pomocnicza do ustawiania progress bara
                     # adr_for = self.construct_adr_for()
                       # ilosc wybranych raportow
-                    print(wybrane_raporty)
                     new_raport = copy_blank_raport(ROOT, self.dest_path, raport_name_user)
-                    delete_empty_raports(new_raport, wybrane_raporty)
-                    add_logo(new_raport, 'logo.png', 'A1')
-                    add_logo(new_raport, 'footer.png', 'C46')
-                    # zwraac adres i status
-                    filter = adr_for[0]
-                    if adr_for[1]:  # must be true
-                        for raport_category in RAPORTS:
-                            for raport_name in RAPORTS[raport_category]:
-                                sql_ = RAPORTS[raport_category][raport_name][0]
-                                sheet_name = RAPORTS[raport_category][raport_name][2]
-                                if RAPORTS[raport_category][raport_name][1]:  # #teoretycznie moznabyloby sprawdzic check
-                                    # tak jak w w
-                                    # check_chosen_raports, ale niech będzie, chyba tak jest troszkę szybciej. CHYBA
-                                    # print(raport_gui_element, raport_name, sql_)
-                                    if raport_name in ['Uprawy otwarte', "Uprawy i młodniki po rębniach złoż."]:
-                                        sql1 = """SELECT F_ARODES.ARODES_INT_NUM, F_ARODES.TEMP_ADRESS_FOREST, F_SUBAREA.STAND_STRUCT_CD, F_AROD_STAND_PEC.FOREST_PEC_CD, F_SUBAREA.SUB_AREA, [skrocony_opis-taks].ot INTO UPR_MLO_ZLOZ FROM (F_ARODES INNER JOIN (F_SUBAREA INNER JOIN [skrocony_opis-taks] ON F_SUBAREA.ARODES_INT_NUM = [skrocony_opis-taks].ARODES_INT_NUM) ON F_ARODES.ARODES_INT_NUM = F_SUBAREA.ARODES_INT_NUM) INNER JOIN F_AROD_STAND_PEC ON F_SUBAREA.ARODES_INT_NUM = F_AROD_STAND_PEC.ARODES_INT_NUM WHERE (((F_ARODES.TEMP_ADRESS_FOREST) Like ?) AND ((F_AROD_STAND_PEC.FOREST_PEC_CD) In ('upr złoż','mło złoż')) AND ((F_ARODES.TEMP_ACT_ADRESS)=True)) ORDER BY F_ARODES.ORDER_KEY; """
-                                        cursor = self.db.cursor()
-                                        if cursor.tables(table='UPR_MLO_ZLOZ', tableType='TABLE').fetchone():
-                                            cursor.execute('DROP TABLE UPR_MLO_ZLOZ')
+                    if not new_raport:
+                        message('RAPORTY','Plik o takiej nazwie już istnieje, wskaż inną ',QMessageBox.Warning)
+                    else:
+                        delete_empty_raports(new_raport, wybrane_raporty)
+                        add_logo(new_raport, 'logo.png', 'A1')
+                        add_logo(new_raport, 'footer.png', 'C46')
+                        to_sum =  ['Pow','AROD_LAND_USE_AREA','pow','SUB_AREA', 'Pow PNSW', 'Pow wskazania', 'PROT_SIZE_AREA']
+                        # zwraac adres i status
+                        filter = adr_for[0]
+                        if adr_for[1]:  # must be true
+                            for raport_category in RAPORTS:
+                                for raport_name in RAPORTS[raport_category]:
+                                    sql_ = RAPORTS[raport_category][raport_name][0]
+                                    sheet_name = RAPORTS[raport_category][raport_name][2]
+                                    if RAPORTS[raport_category][raport_name][1]:  # #teoretycznie moznabyloby sprawdzic check
+                                        # tak jak w w
+                                        # check_chosen_raports, ale niech będzie, chyba tak jest troszkę szybciej. CHYBA
+                                        # print(raport_gui_element, raport_name, sql_)
+                                        if raport_name in ['Uprawy otwarte', "Uprawy i młodniki po rębniach złoż."]:
+                                            sql1 = """SELECT F_ARODES.ARODES_INT_NUM, F_ARODES.TEMP_ADRESS_FOREST, F_SUBAREA.STAND_STRUCT_CD, F_AROD_STAND_PEC.FOREST_PEC_CD, F_SUBAREA.SUB_AREA, [skrocony_opis-taks].ot INTO UPR_MLO_ZLOZ FROM (F_ARODES INNER JOIN (F_SUBAREA INNER JOIN [skrocony_opis-taks] ON F_SUBAREA.ARODES_INT_NUM = [skrocony_opis-taks].ARODES_INT_NUM) ON F_ARODES.ARODES_INT_NUM = F_SUBAREA.ARODES_INT_NUM) INNER JOIN F_AROD_STAND_PEC ON F_SUBAREA.ARODES_INT_NUM = F_AROD_STAND_PEC.ARODES_INT_NUM WHERE (((F_ARODES.TEMP_ADRESS_FOREST) Like ?) AND ((F_AROD_STAND_PEC.FOREST_PEC_CD) In ('upr złoż','mło złoż')) AND ((F_ARODES.TEMP_ACT_ADRESS)=True)) ORDER BY F_ARODES.ORDER_KEY; """
+                                            cursor = self.db.cursor()
+                                            if cursor.tables(table='UPR_MLO_ZLOZ', tableType='TABLE').fetchone():
+                                                cursor.execute('DROP TABLE UPR_MLO_ZLOZ')
+                                                self.db.commit()
+                                            cursor.execute(sql1, filter)
                                             self.db.commit()
-                                        cursor.execute(sql1, filter)
-                                        self.db.commit()
-                                        cursor.close()
-                                    if raport_name in ['Rozbieżności']:
-                                        data = get_table_data(self.db, sql_, [filter, filter])
-                                        data = data.sort_values(by=['PARCEL_NR','UZ','TEMP_ADRESS_FOREST'])
-                                        data = data.round(4)
-                                        data.insert(0, 'Lp', range(0, 0 + len(data)))
-                                    else:
-                                        data = get_table_data(self.db, sql_, [filter])
-                                    if 'Adres leśny' in data.columns:  # skracanie adresu
-                                        data['Adres leśny'] = data['Adres leśny'].apply(shorten_adr_for)
-                                    if 'TEMP_ADRESS_FOREST' in data.columns:  # skracanie adresu
-                                        data['TEMP_ADRESS_FOREST'] = data['TEMP_ADRESS_FOREST'].apply(shorten_adr_for)
-                                    if 'NATURE_MON_FL' in data.columns:  # zmiana osobliwosci przyrodniczych na stringi
-                                        data = data.astype({"NATURE_MON_FL": str})
-                                        data = data.replace({'NATURE_MON_FL': {'False': 'Nie', 'True': 'Tak'}})
-                                    data.loc['Suma'] = data.sum(numeric_only=True)  # zsumowanie floatow
-                                    last_row = pd.IndexSlice[data.index[data.index == "Suma"], : ]  # ostatni row (suma
-                                    # do ustawienia stylu)
-                                    data = data.replace(r'\r\n',' ')  #usuwanie enterow - wazne
-                                    data = data.style. \
-                                        applymap(set_bold, subset=last_row). \
-                                        applymap(set_green, subset=last_row). \
-                                        applymap(set_white_text, subset=last_row). \
-                                        applymap(set_font_size)# ustawianie styli na dataframe w pandas - te cechy excel odziediczy
-                                    to_excel(data, new_raport, sheet_name)
-                                    headers = get_column_names(sheet_name,excel=new_raport)
-                                    set_style(new_raport, sheet_name)
-                                    set_format(new_raport, sheet_name,headers)
-                                    set_row_height(new_raport)
-                                    if sheet_name in ['KO_KDO','ZREB_IST']:
-                                        replace_by_dict(date_dict, new_raport, sheet_name)
-                                    # ustaw zmiany na progress barze
-                                    i += 1
-                                    progress = i / count * 100
-                                    bar.setValue(int(progress))
-                                    QApplication.processEvents()
-                    if progress == 100:
-                        replace_by_dict(date_dict, new_raport, 'LANDING_PAGE') #replace tutaj bo zawsze trzeba zmienic
-                        time.sleep(0.25)
-                        pytanie = msg_question(f'Sukces {raport_name_user}',
-                                               'Ukończono tworzenie raportu, zamknąć aplikacje?',
-                                               self.centralwidget)
-                        if pytanie:
-                            sys.exit()
-        print('ZROBIONO')
+                                            cursor.close()
+                                        if raport_name in ['Rozbieżności']:
+                                            data = get_table_data(self.db, sql_, [filter, filter])
+                                            data = data.sort_values(by=['PARCEL_NR','UZ','TEMP_ADRESS_FOREST'])
+                                            data = data.round(4)
+                                            data.insert(0, 'Lp', range(0, 0 + len(data)))
+                                        else:
+                                            data = get_table_data(self.db, sql_, [filter])
+                                        if 'Adres leśny' in data.columns:  # skracanie adresu
+                                            data['Adres leśny'] = data['Adres leśny'].apply(shorten_adr_for)
+                                        if 'TEMP_ADRESS_FOREST' in data.columns:  # skracanie adresu
+                                            data['TEMP_ADRESS_FOREST'] = data['TEMP_ADRESS_FOREST'].apply(shorten_adr_for)
+                                        if 'NATURE_MON_FL' in data.columns:  # zmiana osobliwosci przyrodniczych na stringi
+                                            data = data.astype({"NATURE_MON_FL": str})
+                                            data = data.replace({'NATURE_MON_FL': {'False': 'Nie', 'True': 'Tak'}})
+                                        data.loc['Suma'] = data.sum(numeric_only=True)  # zsumowanie floatow
+                                        last_row = pd.IndexSlice[data.index[data.index == "Suma"], : ]  # ostatni row (suma
+                                        # do ustawienia stylu)
+                                        data = data.replace(r'\r\n',' ')  #usuwanie enterow - wazne
+                                        data = data.style. \
+                                            applymap(set_bold, subset=last_row). \
+                                            applymap(set_green, subset=last_row). \
+                                            applymap(set_white_text, subset=last_row). \
+                                            applymap(set_font_size)# ustawianie styli na dataframe w pandas - te cechy excel odziediczy
+                                        to_excel(data, new_raport, sheet_name)
+                                        headers = get_column_names(sheet_name,excel=new_raport)
+                                        set_style(new_raport, sheet_name)
+                                        set_format(new_raport, sheet_name,headers)
+                                        set_row_height(new_raport)
+                                        if sheet_name in ['KO_KDO','ZREB_IST']:
+                                            replace_by_dict(date_dict, new_raport, sheet_name)
+                                        # ustaw zmiany na progress barze
+                                        i += 1
+                                        progress = i / count * 100
+                                        bar.setValue(int(progress))
+                                        QApplication.processEvents()
+                        if progress == 100:
+                            replace_by_dict(date_dict, new_raport, 'LANDING_PAGE') #replace tutaj bo zawsze trzeba zmienic
+                            time.sleep(0.25)
+                            message('RAPORTY','Ukończono tworzenie raportu', QMessageBox.Information)
+                            # pytanie = msg_question(f'Sukces {raport_name_user}',
+                            #                        'Ukończono tworzenie raportu, zamknąć aplikacje?',
+                            #                        self.centralwidget)
+                            # if pytanie:
+                            #     sys.exit()
+
 
 
 if __name__ == '__main__':
